@@ -29,7 +29,7 @@ From the pairwise homography transforms, it is possible to begin constructing a 
 
 ![alt text](results/upto19.png "Stitched2")
 
-![alt text](results/23to18map.png "Stitched3")
+![alt text](results/23to18.png "Stitched3")
 
 
 TO DO: To make this algorithm more robust, ideally a customized version of RANSAC must be implemented on the matched features to remove the outliers, which could critically affect the transforms in the iterative process. In addition, a matching algorithm should be implemented to optimize the pair of images matched as selected from the set of images. This would be more reliable than the iterative process which works under the assumption that consecutive images in the series have enough features to track and produce a valid homogrpahy transform.
