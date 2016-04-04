@@ -19,9 +19,9 @@ Clearly, there were some outliers. To detect and removed these the distance of t
 
 The next step in the process was to use the matched features to generate a homography transform between consecutive image frames. Using this transform images are warped to align with their corresponding features image by image through a projective transformation in the series linearly. Perhaps a more robust implementation of this process would have been to sort the images according to their results from the homography transform for all images in the set and to transform the pairs from the best matching image in the set of 24. For the purposes of this task, the images are iteratively transformed. The resulting image pairs are output to visualize any critical outliers. The results of this output are stored in the examples folder along with the initial set. Two of which are shown here:
 
-![alt text](homography/twopairs0.png "Homography1")
+![alt text](homography/twop_pairs0.png "Homography1")
 
-![alt text](homography/twopairs15.png "Homography2")
+![alt text](homography/two_pairs15.png "Homography2")
 
 From the pairwise homography transforms, it is possible to begin constructing a mosaic of the composite image. This is done iteratively, matching the first image in the set with the next, then the third matched first to the second then to the first, and so on. This process can also be done with the last image, followed by the next to last and so on. The results of the first few images as stiched together and the last few as stiched together are shown in the following images. Unfortunately, through the consecutive transforms the images are warped after progressive transforms. In an attempt to resolve this, the last three images are stiched, followed by the next three. Then the result of this was stiched together as seen in the final image.
 
