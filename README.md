@@ -11,22 +11,29 @@ Following the initial rotation all images must be translated to their appropriat
 
 ![alt text](results/features_matched.png "SIFT")
 
+Clearly, there were some outliers. To detect and removed these the distance of the lines matched from plane to plane are calculated, and outliers were removed based on deviation from the mean. This was a necessary step to perform prior to the cv2 RANSAC which is allocated in the homogrpahy function. The results of this process are shown in the next three images.
+
+![alt text](results/features_corrected.png "SIFT")
+![alt text](results/features_corrected2.png "SIFT")
+![alt text](results/features_corrected3.png "SIFT")
+
 The next step in the process was to use the matched features to generate a homography transform between consecutive image frames. Using this transform images are warped to align with their corresponding features image by image through a projective transformation in the series linearly. Perhaps a more robust implementation of this process would have been to sort the images according to their results from the homography transform for all images in the set and to transform the pairs from the best matching image in the set of 24. For the purposes of this task, the images are iteratively transformed. The resulting image pairs are output to visualize any critical outliers. The results of this output are stored in the examples folder along with the initial set. Two of which are shown here:
 
-![alt text](results/homography_transform.png "Homography1")
+![alt text](homography/twopairs0.png "Homography1")
 
-![alt text](results/output_pair3.png "Homography2")
+![alt text](homography/twopairs15.png "Homography2")
 
 From the pairwise homography transforms, it is possible to begin constructing a mosaic of the composite image. This is done iteratively, matching the first image in the set with the next, then the third matched first to the second then to the first, and so on. This process can also be done with the last image, followed by the next to last and so on. The results of the first few images as stiched together and the last few as stiched together are shown in the following images. Unfortunately, through the consecutive transforms the images are warped after progressive transforms. In an attempt to resolve this, the last three images are stiched, followed by the next three. Then the result of this was stiched together as seen in the final image.
 
 ![alt text](results/first_four.png "Stitched1")
 
-![alt text](results/back_to_front.png "Stitched2")
+![alt text](results/upto19.png "Stitched2")
 
 ![alt text](results/23to18map.png "Stitched3")
 
 
 TO DO: To make this algorithm more robust, ideally a customized version of RANSAC must be implemented on the matched features to remove the outliers, which could critically affect the transforms in the iterative process. In addition, a matching algorithm should be implemented to optimize the pair of images matched as selected from the set of images. This would be more reliable than the iterative process which works under the assumption that consecutive images in the series have enough features to track and produce a valid homogrpahy transform.
 
+NOTE: ALL CODE WORKS WITH THE OPENCV 3.1.0 LIBRARY!
 
 

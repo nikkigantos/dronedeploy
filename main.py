@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import sys
+from matplotlib import pyplot as plt
 
 #define the camera intrinsics, camera 35 mm focal length 20...NOT NECESSARY HERE
 K_matrix = np.array([[1, 0, 0], [0, 1, 0], [0,0,1]])
@@ -11,11 +12,17 @@ sift = cv2.xfeatures2d.SIFT_create(250, 3, 0.04, 10, 1.6)
 
 
 
-#extract features and match between image pairs
+#testing function to draw feature matches between corresponding images
+def draw_matches(image, points1, points2):
+    #darray=[]
+    for (x1,y1),(x2,y2) in zip(np.int32(points1), np.int32(points2)):
+        cv2.line(image, (x1,y1), (x2,y2), (255, 0, 255), lineType = cv2.LINE_AA)
+
+    return image
+
+#extract and match features between each pair
 def extract_and_match(image1, image2):
 
-    #image1 = cv2.GaussianBlur(image1,(5,5),0)
-    #image2 = cv2.GaussianBlur(image2,(5,5),0)
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
@@ -36,20 +43,44 @@ def extract_and_match(image1, image2):
 
         (m,n) = m_n
         if m.distance < 0.6*n.distance:
-                good.append(m)
-                image2_pts.append(pt_image2[m.trainIdx].pt)
-                image1_pts.append(pt_image1[m.queryIdx].pt)
+            good.append(m)
+            image2_pts.append(pt_image2[m.trainIdx].pt)
+            image1_pts.append(pt_image1[m.queryIdx].pt)
+
+
+            image2_pts_np = np.int32(image2_pts)
+            image1_pts_np = np.int32(image1_pts)
+    darray = []
+
+    #remove wild outliers
+    for (x1,y1),(x2,y2) in zip(np.int32(image1_pts), np.int32(image2_pts)):
+         d = np.sqrt((x1-x2)**2 + (y1-y2)**2)
+         darray.append(d)
+
+    print(darray)
+
+    mean = np.mean(darray)
+    std =  np.std(darray)
+    print(mean,std)
+    index_list = []
+    for i in xrange(len(darray)):
+        if abs(darray[i]) > (abs(mean) + 0.5*std):
+            index  = i
+            index_list.append(i)
+
+    print(index_list)
+    shifter = 0
+    for i in xrange(len(index_list)):
+        image1_pts.remove(image1_pts[index_list[i]-shifter])
+        image2_pts.remove(image2_pts[index_list[i]-shifter])
+        darray.remove(darray[index_list[i-shifter]])
+        shifter = shifter+1
+
+    print(darray)
 
     return image1_pts, image2_pts
 
 
-#testing function to draw feature matches between corresponding images
-def draw_matches(image, points1, points2):
-
-    for (x1,y1),(x2,y2) in zip(np.int32(points1), np.int32(points2)):
-        cv2.line(image, (x1,y1), (x2,y2), (255, 0, 255), lineType = cv2.LINE_AA)
-
-    return image
 
 #initiate data matrix....ideally this should be a text file
 data = [['dji_0644.jpg',-123.114661,38.426805,90.689292,9.367337,1.260910,0.385252],
@@ -180,13 +211,11 @@ def rotate_and_translate_image(path, data, R_Matrix, x, y):
 
 
     h,w = blank.shape[:2]
-    #print(blank.shape[:2])
 
     #use width and height of image to translate rotation to center of new image
     R2D_image1 = np.float32([[R_Matrix[0][0],R_Matrix[0][1],h/2],[R_Matrix[1][0],R_Matrix[1][1], w/2], [0,0,1]])
     R2D_inv =  np.linalg.inv(R2D_image1)
     R_affine = np.float32([[R2D_inv[0][0], R2D_inv[0][1],R2D_inv[0][2]+w/2],[R2D_inv[1][0],R2D_inv[1][1],R2D_inv[1][2]+h/2]])
-    #R = np.float32([[R_Matrix[0][0],R_Matrix[0][1], h/2],[R_Matrix[1][0],R_Matrix[1][1], w/2]])
     dst1 = cv2.warpAffine(blank, R_affine, (h,w))
 
     return dst1
@@ -219,37 +248,15 @@ def homography_transform(rotated_images1, rotated_images2):
     #compute matching features from two image pairs
     image1_pts, image2_pts = extract_and_match(dst1, dst2)
 
-    print(image1_pts)
-    print(image2_pts)
 
     #code to output the features matched in each image
-    # image = cv2.addWeighted(rotated_images1,0.5,rotated_images2,0.5,0)
-    # image = draw_matches(image, image1_pts, image2_pts)
-    # cv2.imshow('image', image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # #
-    # sys.exit()
-
-    #code to compute the fundamental matrix using matched features, ideally to be implemented to remove outliers
-    # image2_pts_np = np.int32(image2_pts)
-    # image1_pts_np = np.int32(image1_pts)
-    #     #print(image1_pts_np)
+    #image = cv2.addWeighted(rotated_images1,0.5,rotated_images2,0.5,0)
+    #image = draw_matches(image, image1_pts, image2_pts)
+    #cv2.imshow('image', image)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
+    #sys.exit()
     #
-    # if(len(image2_pts)>=8 and len(image2_pts) == len(image1_pts)):
-    #     Fund_Mat, Fmask = cv2.findFundamentalMat(image1_pts_np, image2_pts_np, method=cv2.FM_RANSAC, param1=1.0, param2=0.99)
-    #     print(Fund_Mat)
-    #
-    #     return Fund_Mat
-    #     #print(image1_pts)
-    #     #image2_pts_np = np.array(image2_pts_np).reshape(1, len(image2_pts_np))
-    #     #image1_pts_np = np.array(image1_pts_np).reshape(1, len(image1_pts_np))
-    #     n = len(image1_pts_np)
-    #     image2_pts_np = np.reshape(image2_pts_np,(1,n,2))
-    #     image1_pts_np = np.reshape(image1_pts_np,(1,n,2))
-    #     print(len(image1_pts_np[0]))
-    #
-    #     image1_pts_test, image2_pts_test = cv2.correctMatches(Fund_Mat, image1_pts_np, image2_pts_np)
 
     print(image1_pts)
     print(image2_pts)
@@ -286,9 +293,7 @@ def warpImages(img1, img2, H):
     H_translation = np.array([[1, 0,translation_dist[0]], [0, 1, translation_dist[1]], [0,0,1]])
 
     #H_affine = np.array([[H[0][0], H[0][1], H[0][2]], [H[1][0], H[1][1], H[1][2]]])
-
     #H_translation_affine = np.array([[H_translation[0][0], H_translation[0][1], H_translation[0][2]], [H_translation[1][0], H_translation[1][1], H_translation[1][2]]])
-
     #H_affine = np.array([[H[0][0], H[0][1], H[0][2]] + H_translation[0][2], [H[1][0], H[1][1], H[1][2]+H_translation[1][2]]])
 
     output_img = cv2.warpPerspective(img2, H_translation.dot(H), (x_max-x_min, y_max-y_min))
@@ -314,8 +319,8 @@ def warpImages(img1, img2, H):
 
 
 ds2_store = []
-#output =  rotated_images[0]
 output_matrix = []
+#H = homography_transform(rotated_images[0],rotated_images[1])
 
 #find homography transforms between image pairs in the sequence
 for i in xrange(len(rotated_images)-1):
@@ -324,37 +329,30 @@ for i in xrange(len(rotated_images)-1):
 
 print(len(ds2_store))
 #CODE for the consecutive transforms and mosaic stitiching at the beginning of the series
+output = warpImages(rotated_images[0], rotated_images[1], np.linalg.inv(ds2_store[0]))
+output = warpImages(output, rotated_images[2], np.linalg.inv(ds2_store[1]).dot(np.linalg.inv(ds2_store[0])))
+Hnew1 = np.linalg.inv(ds2_store[1]).dot(np.linalg.inv(ds2_store[0]))
+output = warpImages(output, rotated_images[3],np.linalg.inv(ds2_store[2]).dot(Hnew1))
 
-# output = warpImages(rotated_images[0], rotated_images[1], np.linalg.inv(ds2_store[0]))
-#
-# output = warpImages(output, rotated_images[2], np.linalg.inv(ds2_store[1]).dot(np.linalg.inv(ds2_store[0])))
-#
-# Hnew1 = np.linalg.inv(ds2_store[1]).dot(np.linalg.inv(ds2_store[0]))
-#
-# output = warpImages(output, rotated_images[3],np.linalg.inv(ds2_store[2]).dot(Hnew1))
-#
-# Hnew2 = np.linalg.inv(ds2_store[2]).dot(np.linalg.inv(ds2_store[1]).dot(np.linalg.inv(ds2_store[0])))
-#
-# output = warpImages(output, rotated_images[4], np.linalg.inv(ds2_store[2]).dot(Hnew2))
 
 #####CODE for the consecutive transforms and mosaic stitching at the end of the series
-output2 = warpImages(rotated_images[22], rotated_images[23], ds2_store[22])
+output23 = warpImages(rotated_images[22], rotated_images[23], ds2_store[22])
+output23 = warpImages(output23,rotated_images[21], ds2_store[22].dot(ds2_store[21]))
+ouput23 = warpImages(output23,rotated_images[20], ds2_store[22].dot(ds2_store[21].dot(ds2_store[20])))
+output23 = warpImages(output23, rotated_images[19], ds2_store[22].dot(ds2_store[21].dot(ds2_store[20].dot(ds2_store[19]))))
 
-output21 = warpImages(output2,rotated_images[21], ds2_store[22].dot(ds2_store[21]))
 
-#warping starts here...map 20 to 19
-output20 = warpImages( rotated_images[19],rotated_images[20],  ds2_store[19])
-output20 = warpImages(output20, rotated_images[18], ds2_store[19].dot(ds2_store[18]))
-
-#map 20-18 to 21-23 using transform from 21-20
-output1823 = warpImages(output21, output20, ds2_store[20])
+#warping starts here...map 18 to 17
+output18 = warpImages(rotated_images[17],rotated_images[18],  ds2_store[17])
+#output18 = warpImages(output18,rotated_images[16],  ds2_store[17].dot(ds2_store[16]))
 
 #map 17 to 16 and so forth
-output17 = warpImages( rotated_images[17],rotated_images[16],  ds2_store[16])
+output17 = warpImages(rotated_images[17],rotated_images[16],  ds2_store[16])
 output17 = warpImages(output17,rotated_images[15],  ds2_store[16].dot(ds2_store[15]))
 output17 = warpImages(output17, rotated_images[14], ds2_store[16].dot(ds2_store[15].dot(ds2_store[14])))
-#CODE TO OUTPUT THE TEST IMAGE PAIRS OF HOMOGRAPHY TRANSFROMS
-# new_path = '/Users/jacob/drone_deploy/two_pairs/'
+
+# #CODE TO OUTPUT THE TEST IMAGE PAIRS OF HOMOGRAPHY TRANSFROMS
+# new_path = '/Users/jacob/drone_deploy/homography/'
 # #for each pair compute the composite image, use this iteratively to compute the mosaic
 # for i in xrange(len(rotated_images)-1):
 #     H = ds2_store[i]
@@ -366,8 +364,8 @@ output17 = warpImages(output17, rotated_images[14], ds2_store[16].dot(ds2_store[
 #         file_name = 'two_pairs%d.jpg'%i
 #         file_name = new_path+file_name
 #         cv2.imwrite(file_name, output)
-
-
-cv2.imshow('image', output17)
+#
+#print(ds2_store[13])
+cv2.imshow('image', output23)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
