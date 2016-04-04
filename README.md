@@ -11,7 +11,7 @@ Following the initial rotation all images must be translated to their appropriat
 
 ![alt text](results/features_matched.png "SIFT")
 
-Clearly, there were some outliers. To detect and removed these the distance of the lines matched from plane to plane are calculated, and outliers were removed based on deviation from the mean. This was a necessary step to perform prior to the cv2 RANSAC which is allocated in the homogrpahy function. The results of this process are shown in the next three images.
+Clearly, there were some outliers. To detect and remove these, the distance of the lines matched from plane to plane are calculated, and outliers were removed based on deviation from the mean. This was a necessary step to perform prior to the cv2 RANSAC which is allocated in the homogrpahy function. The results of this process are shown in the next three images.
 
 ![alt text](results/features_corrected.png "SIFT")
 ![alt text](results/features_corrected2.png "SIFT")
