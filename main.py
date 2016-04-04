@@ -315,7 +315,37 @@ def warpImages(img1, img2, H):
 
     final_img = cv2.add(base_image, output_img, dtype=cv2.CV_8U)
 
-    return final_img
+
+    # Crop off the black edges
+    final_gray = cv2.cvtColor(final_img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(final_gray, 1, 255, cv2.THRESH_BINARY)
+    __,contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    print "Found %d contours..." % (len(contours))
+
+    max_area = 0
+    best_rect = (0,0,0,0)
+
+    for cnt in contours:
+        x,y,w,h = cv2.boundingRect(cnt)
+        # print "Bounding Rectangle: ", (x,y,w,h)
+
+        deltaHeight = h-y
+        deltaWidth = w-x
+
+        area = deltaHeight * deltaWidth
+
+        if ( area > max_area and deltaHeight > 0 and deltaWidth > 0):
+            max_area = area
+            best_rect = (x,y,w,h)
+
+        if ( max_area > 0 ):
+            print "Maximum Contour: ", max_area
+            print "Best Rectangle: ", best_rect
+
+    final_img_crop = final_img[best_rect[1]:best_rect[1]+best_rect[3],
+                        best_rect[0]:best_rect[0]+best_rect[2]]
+
+    return final_img_crop
 
 
 ds2_store = []
@@ -338,9 +368,10 @@ output = warpImages(output, rotated_images[3],np.linalg.inv(ds2_store[2]).dot(Hn
 #####CODE for the consecutive transforms and mosaic stitching at the end of the series
 output23 = warpImages(rotated_images[22], rotated_images[23], ds2_store[22])
 output23 = warpImages(output23,rotated_images[21], ds2_store[22].dot(ds2_store[21]))
-ouput23 = warpImages(output23,rotated_images[20], ds2_store[22].dot(ds2_store[21].dot(ds2_store[20])))
-output23 = warpImages(output23, rotated_images[19], ds2_store[22].dot(ds2_store[21].dot(ds2_store[20].dot(ds2_store[19]))))
-
+ouput23 = warpImages(output23,rotated_images[20], ds2_store[22].dot(ds2_store[21]).dot(ds2_store[20]))
+output23 = warpImages(output23, rotated_images[19], ds2_store[22].dot(ds2_store[21]).dot(ds2_store[20]).dot(ds2_store[19]))
+output23 = warpImages(output23, rotated_images[18], ds2_store[22].dot(ds2_store[21]).dot(ds2_store[20]).dot(ds2_store[19]).dot(ds2_store[18]))
+#output23 = warpImages(output23,rotated_images[17],  ds2_store[22].dot(ds2_store[21]).dot(ds2_store[20]).dot(ds2_store[19]).dot(ds2_store[18]).dot(ds2_store[17]))
 
 #warping starts here...map 18 to 17
 output18 = warpImages(rotated_images[17],rotated_images[18],  ds2_store[17])
