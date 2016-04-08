@@ -31,6 +31,12 @@ From the pairwise homography transforms, it is possible to begin constructing a 
 
 ![alt text](results/23to18.png "Stitched3")
 
+As an alternative solution, an affine transformation, rather than a perspective transformation was performed using extracted features from the sequetial images pre-rectified (rotated via the world pitch, yaw and roll orientations). The transformation process, whilst still iterative and feature-based, yielded significantly better results for the mosaic. The result is shown here, and the code for this process is listed as main_retested.py
+
+![alt text](results/homography_test_1420.jpg "Stitched4")
+
+![alt text](results/homography_test_1423.jpg "Stitched5")
+
 
 TO DO: To make this algorithm more robust, ideally a customized version of RANSAC must be implemented on the matched features to remove the outliers, which could critically affect the transforms in the iterative process. In addition, a matching algorithm should be implemented to optimize the pair of images matched as selected from the set of images. This would be more reliable than the iterative process which works under the assumption that consecutive images in the series have enough features to track and produce a valid homogrpahy transform.
 
